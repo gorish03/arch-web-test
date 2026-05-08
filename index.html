@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kamics Technologies — Architecting Visions. Animating Futures.</title>
+<meta name="description" content="Kamics Technologies — A creative AVGC-XR studio crafting architectural visualization, animation, VFX, and immersive digital experiences." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,200..900,0..100&family=Manrope:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+
+<style>
+/* ========================================================
+   KAMICS / Architectural Cinema
+   Scroll-driven video backgrounds, editorial typography
+   ======================================================== */
+
+:root {
+  --ink:        #0c0a09;
+  --ink-soft:   #1a1614;
+  --parchment:  #f1e9d8;
+  --parchment-dim: #d8d0bf;
+  --terracotta: #c2724a;
+  --sage:       #8a9176;
+  --stone:      #8d8576;
+  --line:       rgba(241, 233, 216, 0.18);
+  --line-strong:rgba(241, 233, 216, 0.45);
+
+  --serif: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
+  --sans:  'Manrope', system-ui, sans-serif;
+  --mono:  'JetBrains Mono', ui-monospace, monospace;
+
+  --total-scroll: 720vh; /* total document scroll length */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: auto; }
+html, body {
+  background: var(--ink);
+  color: var(--parchment);
+  font-family: var(--sans);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection { background: var(--terracotta); color: var(--ink); }
+
+a { color: inherit; text-decoration: none; }
+
+/* ---------- Loading screen ---------- */
+.loader {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 2rem;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+.loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.loader-mark {
+  font-family: var(--serif);
+  font-weight: 200;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  letter-spacing: -0.03em;
+  color: var(--parchment);
+  font-style: italic;
+}
+.loader-bar {
+  width: 240px; height: 1px;
+  background: rgba(241, 233, 216, 0.15);
+  position: relative; overflow: hidden;
+}
+.loader-bar::after {
+  content: ''; position: absolute; inset: 0;
+  background: var(--parchment);
+  transform: scaleX(0); transform-origin: left;
+  animation: load 2.4s ease-in-out infinite;
+}
+@keyframes load {
+  0%   { transform: scaleX(0); transform-origin: left; }
+  50%  { transform: scaleX(1); transform-origin: left; }
+  50.1%{ transform: scaleX(1); transform-origin: right; }
+  100% { transform: scaleX(0); transform-origin: right; }
+}
+.loader-label {
+  font-family: var(--mono);
+  font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--stone);
+}
+
+/* ---------- Scroll spacer (defines total scroll height) ---------- */
+.scroll-track {
+  width: 1px;
+  height: var(--total-scroll);
+  pointer-events: none;
+}
+
+/* ---------- Fixed stage ---------- */
+.stage {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Video container */
+.video-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.video-wrap video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: opacity;
+}
+
+/* Vignette + warm tone overlays for legibility & mood */
+.video-wrap::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 30%, rgba(12,10,9,0.55) 100%),
+    linear-gradient(180deg, rgba(12,10,9,0.35) 0%, rgba(12,10,9,0.15) 30%, rgba(12,10,9,0.15) 70%, rgba(12,10,9,0.55) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+.video-wrap::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(194, 114, 74, 0.04) 0%, rgba(138, 145, 118, 0.03) 100%);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Film grain */
+.grain {
+  position: absolute; inset: -50%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.94 0 0 0 0 0.91 0 0 0 0 0.85 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.18;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 4;
+  animation: grain-shift 0.6s steps(2) infinite;
+}
+@keyframes grain-shift {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(-3%, 2%); }
+}
+
+/* ---------- Persistent UI: nav, side rail, scroll progress ---------- */
+.shell {
+  position: fixed; inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+.shell > * { pointer-events: auto; }
+
+.nav {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.6rem clamp(1.5rem, 4vw, 3rem);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--parchment);
+  mix-blend-mode: difference;
+}
+.nav-mark {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.2rem;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+.nav-links {
+  display: flex; gap: clamp(1rem, 3vw, 2.4rem);
+  list-style: none;
+}
+.nav-links a {
+  position: relative;
+  transition: opacity 0.3s ease;
+}
+.nav-links a:hover { opacity: 0.6; }
+.nav-cta {
+  border: 1px solid var(--parchment);
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  transition: all 0.3s ease;
+}
+.nav-cta:hover { background: var(--parchment); color: var(--ink); }
+
+/* Side rail — coordinates / chapter label */
+.rail-left {
+  position: absolute;
+  left: clamp(1.5rem, 4vw, 3rem);
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg) translateX(0);
+  transform-origin: left center;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--parchment-dim);
+  white-space: nowrap;
+  display: flex; align-items: center; gap: 1.2rem;
+}
+.rail-left::before {
+  content: ''; width: 32px; height: 1px;
+  background: var(--parchment-dim);
+}
+
+.rail-right {
+  position: absolute;
+  right: clamp(1rem, 3vw, 2rem);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  color: var(--parchment-dim);
+}
+.progress-track {
+  width: 1px;
+  height: 200px;
+  background: rgba(241, 233, 216, 0.15);
+  position: relative;
+}
+.progress-fill {
+  position: absolute;
+  top: 0; left: 0;
+  width: 1px;
+  background: var(--parchment);
+  height: 0%;
+  transition: height 0.1s linear;
+}
+.progress-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Sections (overlay text) ---------- */
+.sections {
+  position: absolute; inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.section {
+  position: absolute; inset: 0;
+  display: flex;
+  padding: 0 clamp(2rem, 6vw, 5rem);
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.65, 0, 0.35, 1),
+              transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+  pointer-events: none;
+}
+.section.is-active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--parchment-dim);
+  display: flex; align-items: center; gap: 0.8rem;
+}
+.eyebrow::before {
+  content: ''; display: inline-block;
+  width: 28px; height: 1px;
+  background: var(--terracotta);
+}
+
+/* ---------- 1. Hero ---------- */
+.hero {
+  align-items: center;
+  justify-content: flex-start;
+}
+.hero-inner {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+.hero-eyebrow {
+  position: absolute;
+  top: 25vh;
+  left: clamp(2rem, 6vw, 5rem);
+}
+.hero h1 {
+  font-family: var(--serif);
+  font-weight: 200;
+  font-size: clamp(3.2rem, 11vw, 11rem);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  color: var(--parchment);
+  font-variation-settings: "opsz" 144, "SOFT" 50;
+  max-width: 14ch;
+  text-shadow: 0 2px 40px rgba(0,0,0,0.4);
+}
+.hero h1 .italic { font-style: italic; font-weight: 200; }
+.hero h1 .accent { color: var(--terracotta); }
+.hero-meta {
+  position: absolute;
+  bottom: 8vh;
+  left: clamp(2rem, 6vw, 5rem);
+  right: clamp(2rem, 6vw, 5rem);
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 2rem;
+}
+.hero-tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(0.95rem, 1.3vw, 1.15rem);
+  color: var(--parchment-dim);
+  max-width: 36ch;
+  line-height: 1.5;
+}
+.scroll-cue {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  display: flex; align-items: center; gap: 0.8rem;
+  color: var(--parchment);
+}
+.scroll-cue-line {
+  display: inline-block;
+  width: 60px; height: 1px;
+  background: var(--parchment);
+  position: relative; overflow: hidden;
+}
+.scroll-cue-line::after {
+  content: ''; position: absolute; inset: 0;
+  background: var(--terracotta);
+  animation: scroll-pulse 2s ease-in-out infinite;
+}
+@keyframes scroll-pulse {
+  0%, 100% { transform: translateX(-100%); }
+  50%      { transform: translateX(100%); }
+}
+
+/* ---------- 2. Manifesto / About ---------- */
+.manifesto {
+  align-items: center;
+  justify-content: flex-end;
+}
+.manifesto-inner {
+  max-width: 720px;
+  margin-right: clamp(1rem, 3vw, 3rem);
+}
+.manifesto-eyebrow { margin-bottom: 2rem; }
+.manifesto h2 {
+  font-family: var(--serif);
+  font-weight: 200;
+  font-style: italic;
+  font-size: clamp(2rem, 4.5vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 2rem;
+  font-variation-settings: "opsz" 144;
+}
+.manifesto h2 .quote {
+  color: var(--terracotta);
+  font-style: normal;
+  font-weight: 300;
+  font-size: 1.4em;
+  vertical-align: -0.15em;
+  margin-right: 0.05em;
+}
+.manifesto p {
+  font-size: clamp(1rem, 1.15vw, 1.1rem);
+  line-height: 1.7;
+  color: var(--parchment-dim);
+  max-width: 56ch;
+}
+.manifesto-divider {
+  width: 60px; height: 1px;
+  background: var(--line-strong);
+  margin: 1.6rem 0;
+}
+
+/* ---------- 3. Disciplines ---------- */
+.disciplines {
+  align-items: center;
+}
+.disc-inner {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 2.2fr;
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: start;
+}
+.disc-side .eyebrow { margin-bottom: 1.5rem; }
+.disc-side h3 {
+  font-family: var(--serif);
+  font-weight: 200;
+  font-size: clamp(2rem, 3.5vw, 3.4rem);
+  line-height: 1;
+  letter-spacing: -0.025em;
+  margin-bottom: 1.5rem;
+}
+.disc-side h3 em {
+  font-style: italic;
+  color: var(--terracotta);
+}
+.disc-side p {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--parchment-dim);
+  max-width: 32ch;
+}
+.disc-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid var(--line-strong);
+}
+.disc-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.4rem;
+  padding: 1.3rem 0.4rem 1.3rem 0;
+  border-bottom: 1px solid var(--line);
+  align-items: baseline;
+  cursor: default;
+  transition: padding 0.35s cubic-bezier(0.65,0,0.35,1);
+}
+.disc-item:nth-child(odd) { padding-right: 1.4rem; border-right: 1px solid var(--line); }
+.disc-item:nth-child(even) { padding-left: 1.4rem; }
+.disc-item:hover { padding-left: 0.8rem; }
+.disc-item:nth-child(even):hover { padding-left: 2rem; }
+.disc-num {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--terracotta);
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.4rem;
+}
+.disc-name {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(1.3rem, 1.9vw, 1.7rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.disc-name em { font-style: italic; color: var(--parchment-dim); font-weight: 200; }
+
+/* ---------- 4. Method / Process ---------- */
+.method {
+  align-items: center;
+  justify-content: flex-start;
+}
+.method-inner {
+  width: 100%;
+  max-width: 1400px;
+}
+.method-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: end;
+  margin-bottom: 3rem;
+}
+.method-head h3 {
+  font-family: var(--serif);
+  font-weight: 200;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+.method-head h3 em { font-style: italic; color: var(--terracotta); }
+.method-head .eyebrow { margin-bottom: 1.2rem; }
+.method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--line-strong);
+}
+.method-step {
+  padding: 2rem 1.6rem 0 0;
+  border-right: 1px solid var(--line);
+  position: relative;
+}
+.method-step:last-child { border-right: none; padding-right: 0; }
+.method-step:not(:first-child) { padding-left: 1.6rem; }
+.method-step-num {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: var(--terracotta);
+  margin-bottom: 1.2rem;
+}
+.method-step h4 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(1.4rem, 2vw, 1.9rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  margin-bottom: 1rem;
+}
+.method-step p {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--parchment-dim);
+}
+
+/* ---------- 5. Doctrine / Why Kamics ---------- */
+.doctrine {
+  align-items: center;
+}
+.doctrine-inner {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 2.5fr;
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
+}
+.doctrine-head .eyebrow { margin-bottom: 1.5rem; }
+.doctrine-head h3 {
+  font-family: var(--serif);
+  font-weight: 200;
+  font-size: clamp(2rem, 3.5vw, 3.4rem);
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  margin-bottom: 1.5rem;
+}
+.doctrine-head h3 em { font-style: italic; color: var(--terracotta); }
+.doctrine-head .num {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.3em;
+  color: var(--parchment-dim);
+}
+.pillars {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--line-strong);
+}
+.pillar {
+  padding: 1.5rem 1.6rem 1.5rem 0;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 1.4rem;
+  align-items: start;
+}
+.pillar:nth-child(odd) { border-right: 1px solid var(--line); padding-right: 1.6rem; }
+.pillar:nth-child(even) { padding-left: 1.6rem; }
+.pillar-num {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  color: var(--terracotta);
+  padding-top: 0.4rem;
+}
+.pillar h4 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(1.1rem, 1.5vw, 1.4rem);
+  line-height: 1.15;
+  margin-bottom: 0.5rem;
+  color: var(--parchment);
+}
+.pillar p {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--parchment-dim);
+}
+
+/* ---------- 6. Correspondence / Contact ---------- */
+.contact {
+  align-items: center;
+}
+.contact-inner {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: end;
+}
+.contact-head .eyebrow { margin-bottom: 2rem; }
+.contact h2 {
+  font-family: var(--serif);
+  font-weight: 200;
+  font-size: clamp(2.4rem, 5.5vw, 5.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  margin-bottom: 1.5rem;
+}
+.contact h2 em { font-style: italic; color: var(--terracotta); }
+.contact-blurb {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+  line-height: 1.55;
+  color: var(--parchment-dim);
+  max-width: 42ch;
+}
+.contact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.detail-block .label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--parchment-dim);
+  margin-bottom: 0.6rem;
+}
+.detail-block .value {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.05rem, 1.4vw, 1.3rem);
+  line-height: 1.4;
+  color: var(--parchment);
+  display: block;
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+}
+.detail-block .value::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -2px;
+  width: 100%; height: 1px;
+  background: var(--parchment);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s cubic-bezier(0.65,0,0.35,1);
+}
+.detail-block .value:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+.contact-cta {
+  display: inline-flex; align-items: center; gap: 0.8rem;
+  border: 1px solid var(--parchment);
+  padding: 1rem 1.6rem;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-top: 2rem;
+  transition: all 0.4s cubic-bezier(0.65,0,0.35,1);
+  width: max-content;
+}
+.contact-cta:hover {
+  background: var(--parchment);
+  color: var(--ink);
+  padding-right: 2.4rem;
+}
+.contact-cta-arrow {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.65,0,0.35,1);
+}
+.contact-cta:hover .contact-cta-arrow {
+  transform: translateX(6px);
+}
+
+.contact-foot {
+  position: absolute;
+  bottom: 2rem;
+  left: clamp(2rem, 6vw, 5rem);
+  right: clamp(2rem, 6vw, 5rem);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--parchment-dim);
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+}
+.contact-foot ul { list-style: none; display: flex; gap: 1.5rem; }
+.contact-foot a:hover { color: var(--parchment); }
+
+/* ---------- Frame number readout (cinematic touch) ---------- */
+.frame-readout {
+  position: fixed;
+  bottom: 1.6rem;
+  left: clamp(2rem, 6vw, 5rem);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--parchment-dim);
+  z-index: 51;
+  pointer-events: none;
+  display: flex; gap: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.frame-readout span:first-child { color: var(--terracotta); }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 900px) {
+  :root { --total-scroll: 600vh; }
+  .nav-links { display: none; }
+  .nav-cta { padding: 0.5rem 0.9rem; font-size: 0.65rem; }
+  .rail-left, .rail-right { display: none; }
+  .frame-readout { font-size: 0.55rem; gap: 0.8rem; }
+  .hero-eyebrow { top: 22vh; }
+  .hero h1 { font-size: clamp(2.6rem, 14vw, 4.5rem); }
+  .hero-meta { flex-direction: column; align-items: flex-start; gap: 1.2rem; }
+  .manifesto-inner { margin-right: 0; }
+  .disc-inner { grid-template-columns: 1fr; gap: 1.5rem; }
+  .disc-list { grid-template-columns: 1fr; }
+  .disc-item:nth-child(odd) { border-right: none; padding-right: 0; }
+  .disc-item:nth-child(even) { padding-left: 0; }
+  .method-head { grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  .method-grid { grid-template-columns: 1fr; }
+  .method-step { border-right: none; border-bottom: 1px solid var(--line); padding: 1.4rem 0 1.4rem 0 !important; }
+  .doctrine-inner { grid-template-columns: 1fr; gap: 1.5rem; }
+  .pillars { grid-template-columns: 1fr; }
+  .pillar:nth-child(odd) { border-right: none; padding-right: 0; }
+  .pillar:nth-child(even) { padding-left: 0; }
+  .contact-inner { grid-template-columns: 1fr; gap: 2rem; }
+  .contact-foot { flex-direction: column; gap: 0.8rem; align-items: flex-start; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ========== Loading ========== -->
+<div class="loader" id="loader">
+  <div class="loader-mark">Kamics.</div>
+  <div class="loader-bar"></div>
+  <div class="loader-label">Rendering Frame 001</div>
+</div>
+
+<!-- ========== Scroll Track (sets total scroll length) ========== -->
+<div class="scroll-track" aria-hidden="true"></div>
+
+<!-- ========== Fixed Stage ========== -->
+<div class="stage">
+
+  <!-- Video layer -->
+  <div class="video-wrap">
+    <video id="v1" muted playsinline preload="auto" disablepictureinpicture>
+      <source src="videos/scene-01.mp4" type="video/mp4" />
+    </video>
+    <video id="v2" muted playsinline preload="auto" disablepictureinpicture style="opacity:0;">
+      <source src="videos/scene-02.mp4" type="video/mp4" />
+    </video>
+    <div class="grain"></div>
+  </div>
+
+  <!-- Persistent UI shell -->
+  <div class="shell">
+    <nav class="nav">
+      <a href="#" class="nav-mark">Kamics.</a>
+      <ul class="nav-links">
+        <li><a href="#" data-jump="0">Studio</a></li>
+        <li><a href="#" data-jump="0.32">Disciplines</a></li>
+        <li><a href="#" data-jump="0.55">Method</a></li>
+        <li><a href="#" data-jump="0.74">Doctrine</a></li>
+      </ul>
+      <a href="#" data-jump="0.92" class="nav-cta">Say Hello</a>
+    </nav>
+
+    <div class="rail-left" id="rail-chapter">Ch. I — Studio</div>
+
+    <div class="rail-right">
+      <div class="progress-num" id="prog-num">00</div>
+      <div class="progress-track"><div class="progress-fill" id="prog-fill"></div></div>
+      <div class="progress-num">100</div>
+    </div>
+
+    <div class="frame-readout">
+      <span id="frame-label">SCENE_01</span>
+      <span id="frame-time">00:00 / 00:08</span>
+    </div>
+  </div>
+
+  <!-- ========== Sections (text overlays) ========== -->
+  <div class="sections">
+
+    <!-- 1 / Hero -->
+    <section class="section hero" data-start="0" data-end="0.10">
+      <div class="hero-eyebrow eyebrow">Kamics — Est. 2025 — AVGC&middot;XR Studio</div>
+      <div class="hero-inner">
+        <h1>
+          Architecting<br>
+          <span class="italic">Visions.</span><br>
+          Animating<br>
+          <span class="italic accent">Futures.</span>
+        </h1>
+      </div>
+      <div class="hero-meta">
+        <p class="hero-tagline">A creative studio sculpting hyper-realistic worlds — where craft, code, and cinema converge into spaces you can almost walk through.</p>
+        <div class="scroll-cue">
+          <span>Begin Sequence</span>
+          <span class="scroll-cue-line"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 / Manifesto -->
+    <section class="section manifesto" data-start="0.14" data-end="0.30">
+      <div class="manifesto-inner">
+        <div class="manifesto-eyebrow eyebrow">01 — Studio</div>
+        <h2><span class="quote">&ldquo;</span>We don't just create &mdash;<br>we innovate and redefine<br>digital storytelling.</h2>
+        <div class="manifesto-divider"></div>
+        <p>At Kamics Technologies, we blend creativity and technology to deliver world-class Animation, Architectural Visualization, Industrial Animation, Visual Effects &amp; CGI, Game Design &amp; Development, Comics &amp; Illustrations, and AR/VR Experiences. Our team transforms ideas into hyper-realistic visuals and immersive digital experiences that inspire, engage, and elevate brands.</p>
+      </div>
+    </section>
+
+    <!-- 3 / Disciplines -->
+    <section class="section disciplines" data-start="0.34" data-end="0.52">
+      <div class="disc-inner">
+        <div class="disc-side">
+          <div class="eyebrow">02 — Disciplines</div>
+          <h3>Industries<br>we <em>cater</em> to.</h3>
+          <p>Six disciplines, one studio. Each project sits at the meeting point of architecture, animation, and intent — drawn through the same hand.</p>
+        </div>
+        <ul class="disc-list">
+          <li class="disc-item">
+            <span class="disc-num">I</span>
+            <span class="disc-name">2D <em>/</em> 3D Animation</span>
+          </li>
+          <li class="disc-item">
+            <span class="disc-num">II</span>
+            <span class="disc-name">Architectural <em>Visualization</em></span>
+          </li>
+          <li class="disc-item">
+            <span class="disc-num">III</span>
+            <span class="disc-name">Industrial <em>Animation</em></span>
+          </li>
+          <li class="disc-item">
+            <span class="disc-num">IV</span>
+            <span class="disc-name">Visual Effects <em>&amp;</em> CGI</span>
+          </li>
+          <li class="disc-item">
+            <span class="disc-num">V</span>
+            <span class="disc-name">Game Design <em>/</em> Development</span>
+          </li>
+          <li class="disc-item">
+            <span class="disc-num">VI</span>
+            <span class="disc-name">Augmented <em>/</em> Virtual Reality</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 4 / Method -->
+    <section class="section method" data-start="0.56" data-end="0.72">
+      <div class="method-inner">
+        <div class="method-head">
+          <div>
+            <div class="eyebrow">03 — Method</div>
+            <h3>The <em>Process.</em></h3>
+          </div>
+          <p style="font-family:var(--serif); font-style:italic; font-weight:300; font-size:clamp(0.95rem,1.2vw,1.1rem); color:var(--parchment-dim); line-height:1.5; max-width:38ch; margin-left:auto;">Three movements. Each one a measured step from rough sketch to delivered world.</p>
+        </div>
+        <div class="method-grid">
+          <article class="method-step">
+            <div class="method-step-num">M / 01</div>
+            <h4>Discovery <br>&amp; Onboarding</h4>
+            <p>We begin by assessing your requirements, defining the scope and timelines, and formalizing our engagement through agreement and submission of inputs.</p>
+          </article>
+          <article class="method-step">
+            <div class="method-step-num">M / 02</div>
+            <h4>Design <br>&amp; Development</h4>
+            <p>We then execute the design and development as per specifications, sharing drafts for your review and incorporating necessary revisions.</p>
+          </article>
+          <article class="method-step">
+            <div class="method-step-num">M / 03</div>
+            <h4>Delivery <br>&amp; Support</h4>
+            <p>Finally, we furnish the agreed deliverables in the required formats and provide limited post-delivery support to ensure successful completion.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 / Doctrine -->
+    <section class="section doctrine" data-start="0.76" data-end="0.90">
+      <div class="doctrine-inner">
+        <div class="doctrine-head">
+          <div class="eyebrow">04 — Doctrine</div>
+          <h3>Why <em>Kamics?</em></h3>
+          <div class="num">Four foundations / one studio</div>
+        </div>
+        <div class="pillars">
+          <div class="pillar">
+            <span class="pillar-num">P / I</span>
+            <div>
+              <h4>Dedicated Team</h4>
+              <p>A core of nearly twenty skilled professionals delivering expertise across multiple domains.</p>
+            </div>
+          </div>
+          <div class="pillar">
+            <span class="pillar-num">P / II</span>
+            <div>
+              <h4>Trusted Network</h4>
+              <p>Strong outsourcing partnerships that allow us to scale and specialize without compromising quality.</p>
+            </div>
+          </div>
+          <div class="pillar">
+            <span class="pillar-num">P / III</span>
+            <div>
+              <h4>Global Reach</h4>
+              <p>Proven experience working with clients across Europe and the Middle East, adapting to diverse markets.</p>
+            </div>
+          </div>
+          <div class="pillar">
+            <span class="pillar-num">P / IV</span>
+            <div>
+              <h4>Creative Precision</h4>
+              <p>A blend of creativity and technology, ensuring solutions both visually compelling and strategically effective.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 / Contact -->
+    <section class="section contact" data-start="0.93" data-end="1.0">
+      <div class="contact-inner">
+        <div class="contact-head">
+          <div class="eyebrow">05 — Correspondence</div>
+          <h2>Let's <em>animate</em><br>something extraordinary.</h2>
+          <p class="contact-blurb">Bring your ideas to life with us, where imagination meets innovation. The studio is open to new conversations, briefs, and collaborations.</p>
+          <a class="contact-cta" href="mailto:sushobhan@kamicstechnologies.com">
+            Say Hello
+            <span class="contact-cta-arrow">→</span>
+          </a>
+        </div>
+        <div class="contact-details">
+          <div class="detail-block">
+            <div class="label">Telephone</div>
+            <a class="value" href="tel:+918306069698">+91 &middot; 8306 069 698</a>
+          </div>
+          <div class="detail-block">
+            <div class="label">Mail</div>
+            <a class="value" href="mailto:sushobhan@kamicstechnologies.com">sushobhan@<br>kamicstechnologies.com</a>
+          </div>
+          <div class="detail-block">
+            <div class="label">Studio</div>
+            <span class="value" style="font-style:normal;">India &middot; Remote</span>
+          </div>
+        </div>
+      </div>
+      <div class="contact-foot">
+        <span>© Kamics Technologies Pvt Ltd · MMXXV</span>
+        <ul>
+          <li><a href="https://www.instagram.com/kamics_technologies/" target="_blank" rel="noopener">Instagram ↗</a></li>
+          <li><a href="#" target="_blank" rel="noopener">Behance ↗</a></li>
+          <li><a href="#" target="_blank" rel="noopener">LinkedIn ↗</a></li>
+        </ul>
+      </div>
+    </section>
+
+  </div><!-- /sections -->
+</div><!-- /stage -->
+
+<script>
+/* =====================================================================
+   SCROLL ENGINE — frame-precise video scrubbing
+   ===================================================================== */
+
+const v1 = document.getElementById('v1');
+const v2 = document.getElementById('v2');
+const loader = document.getElementById('loader');
+const progFill = document.getElementById('prog-fill');
+const progNum  = document.getElementById('prog-num');
+const railChapter = document.getElementById('rail-chapter');
+const frameLabel  = document.getElementById('frame-label');
+const frameTime   = document.getElementById('frame-time');
+const sections = document.querySelectorAll('.section');
+
+const CHAPTERS = [
+  { from: 0.00, to: 0.13, label: 'Ch. I — Studio' },
+  { from: 0.13, to: 0.33, label: 'Ch. II — Manifesto' },
+  { from: 0.33, to: 0.55, label: 'Ch. III — Disciplines' },
+  { from: 0.55, to: 0.74, label: 'Ch. IV — Method' },
+  { from: 0.74, to: 0.92, label: 'Ch. V — Doctrine' },
+  { from: 0.92, to: 1.01, label: 'Ch. VI — Correspondence' },
+];
+
+/* ---- Wait until both videos have enough data to seek smoothly ---- */
+let v1Ready = false, v2Ready = false;
+function checkReady() {
+  if (v1Ready && v2Ready) {
+    requestAnimationFrame(() => loader.classList.add('done'));
+    // try kick-start playback for some browsers, then immediately pause
+    [v1, v2].forEach(v => {
+      const p = v.play();
+      if (p && p.then) p.then(() => v.pause()).catch(() => {});
+    });
+    update();
+  }
+}
+v1.addEventListener('loadeddata', () => { v1Ready = true; checkReady(); });
+v2.addEventListener('loadeddata', () => { v2Ready = true; checkReady(); });
+v1.addEventListener('canplaythrough', () => { v1Ready = true; checkReady(); });
+v2.addEventListener('canplaythrough', () => { v2Ready = true; checkReady(); });
+// fallback
+setTimeout(() => { v1Ready = true; v2Ready = true; checkReady(); }, 4000);
+
+/* ---- Scroll progress (0..1) ---- */
+function getProgress() {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  if (max <= 0) return 0;
+  return Math.min(1, Math.max(0, window.scrollY / max));
+}
+
+/* ---- The render loop --------------------------------------------------
+   Maps scroll progress to video time precisely.
+   Uses requestAnimationFrame for buttery sync.
+   --------------------------------------------------------------------- */
+let raf = null;
+let lastP = -1;
+
+function update() {
+  const p = getProgress();
+
+  // Only re-paint when scroll actually changed (saves CPU)
+  if (p !== lastP) {
+    lastP = p;
+
+    // -- VIDEO SCRUBBING ------------------------------------------------
+    // 0.00 - 0.50 → scene 1 plays through
+    // 0.50 - 1.00 → scene 2 plays through
+    // a small crossfade band 0.46 - 0.54 blends them
+    const d1 = isFinite(v1.duration) ? v1.duration : 8;
+    const d2 = isFinite(v2.duration) ? v2.duration : 8;
+
+    let t1, t2;
+    if (p < 0.5) {
+      t1 = (p / 0.5) * d1;
+      t2 = 0;
+    } else {
+      t1 = d1;
+      t2 = ((p - 0.5) / 0.5) * d2;
+    }
+
+    // direct frame-accurate seek
+    if (Math.abs(v1.currentTime - t1) > 1 / 60) {
+      try { v1.currentTime = Math.min(d1 - 0.01, Math.max(0, t1)); } catch (e) {}
+    }
+    if (Math.abs(v2.currentTime - t2) > 1 / 60) {
+      try { v2.currentTime = Math.min(d2 - 0.01, Math.max(0, t2)); } catch (e) {}
+    }
+
+    // -- VIDEO CROSSFADE ------------------------------------------------
+    let a1, a2;
+    if (p < 0.46)      { a1 = 1; a2 = 0; }
+    else if (p > 0.54) { a1 = 0; a2 = 1; }
+    else {
+      const k = (p - 0.46) / 0.08;
+      a1 = 1 - k; a2 = k;
+    }
+    v1.style.opacity = a1.toFixed(3);
+    v2.style.opacity = a2.toFixed(3);
+
+    // -- SECTION VISIBILITY --------------------------------------------
+    sections.forEach(s => {
+      const start = parseFloat(s.dataset.start);
+      const end   = parseFloat(s.dataset.end);
+      const visible = p >= start && p <= end;
+      s.classList.toggle('is-active', visible);
+    });
+
+    // -- UI READOUTS ----------------------------------------------------
+    progFill.style.height = (p * 100).toFixed(2) + '%';
+    progNum.textContent = String(Math.round(p * 100)).padStart(2, '0');
+
+    const chapter = CHAPTERS.find(c => p >= c.from && p < c.to) || CHAPTERS[CHAPTERS.length - 1];
+    railChapter.textContent = chapter.label;
+
+    const activeVideo = p < 0.5 ? 1 : 2;
+    const activeT     = activeVideo === 1 ? t1 : t2;
+    const activeD     = activeVideo === 1 ? d1 : d2;
+    frameLabel.textContent = 'SCENE_' + String(activeVideo).padStart(2, '0');
+    frameTime.textContent  = fmtTime(activeT) + ' / ' + fmtTime(activeD);
+  }
+
+  raf = requestAnimationFrame(update);
+}
+
+function fmtTime(t) {
+  if (!isFinite(t)) t = 0;
+  const m = Math.floor(t / 60);
+  const s = Math.floor(t % 60);
+  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+/* ---- Nav jumps ---- */
+document.querySelectorAll('[data-jump]').forEach(el => {
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    const target = parseFloat(el.dataset.jump);
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    window.scrollTo({ top: max * target, behavior: 'smooth' });
+  });
+});
+
+/* ---- Keyboard arrows for fine scrub ---- */
+window.addEventListener('keydown', e => {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+    window.scrollBy({ top: window.innerHeight * 0.15, behavior: 'smooth' });
+  } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+    window.scrollBy({ top: -window.innerHeight * 0.15, behavior: 'smooth' });
+  } else if (e.key === 'Home') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (e.key === 'End') {
+    window.scrollTo({ top: max, behavior: 'smooth' });
+  }
+});
+
+/* ---- iOS Safari needs a user-gesture hint to allow seeking smoothly ---- */
+document.addEventListener('touchstart', () => {
+  [v1, v2].forEach(v => {
+    if (v.paused) {
+      const p = v.play();
+      if (p && p.then) p.then(() => v.pause()).catch(() => {});
+    }
+  });
+}, { once: true, passive: true });
+
+</script>
+</body>
+</html>
